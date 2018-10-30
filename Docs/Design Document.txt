@@ -1,0 +1,26 @@
+1)Our Search Engine Works on Music Lyrics of over 2000 songs in form of text files
+
+2)We have used the TF-IDF model with Length normalization(this takes care for small qeury averaged over the length of document)
+
+3)Dictionary is being used to store the tf idf
+
+4) Each key is a text file and the value is a tuple representing : the word and tf*idf along with all the normalizations of the word 
+
+5)In the end the score for each document will be sum of all the words present in the query and the text file
+
+6)Matrix were not used to store the tf idf because the the corpus being songs -after removing all the stop words may not contain
+very similar words. Hence the matrix tends to be sparse ,wasting lot of memory
+
+7)For a given query we will traverse the tf_idf_dict and find sum 
+
+8) The result will be sorted and top 10 non zero tf-idf will be posted
+
+9) Novelty:We came up auto correct code where the user ,when typing a wrong word will find the nearest word from the bag of words.
+The bag of words will contain all the unique words and if the word from the query is not present in the bag ,it will find the nearest word
+using the edit_distance coded by us implemented using dynamic programming
+
+10)The preprocessing stage has lemetization but not stemming since we need the stop words to calculate the length of the document
+
+11)We will not be including stop words in the tf_idf_dictionary since the query will rarely contain them.
+
+12)Even if the query contains stop words we will be stemming them and qerying them.

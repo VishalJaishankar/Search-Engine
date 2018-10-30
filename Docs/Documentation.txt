@@ -1,0 +1,169 @@
+*******Music Search Engine with 2000 songs with lyrics(ENGLISH)*************
+
+
+
+preprocess: This function takes in the filename and outputs the file in a list format after stemming and lemmatization 
+
+1)The whole corpus is traversed and the preprocess for each output:
+	-spaces and punctuations are removed
+	-all words are converted to lower case
+	-Unique words are added to the bag
+	-basix_index is a dictionary containing filename as a key and set of unique words as values
+	
+2)Inverted Index is created using the composition:
+	inverted_index = {bagi: set(fname for fname, wlist in basic_index.items() if bagi in wlist) for bagi in bag}
+
+
+3)tf of each file is calculated:
+using the formula:                 tf = output.count(word) / (output.count(word) + (k * len(output) / average))
+This is stored in tf_dict where the key is filename and value is-word ,tf calculated using the above formula
+
+4)Normalization with respect to document length is done with
+        idf_dict[word] = math.log((no_of_docs / len(names)))
+
+5)Then both tf and idf are traversed and words are matched and multiplied and stored again in tf dict giving tf-idf-dict
+
+6)This tf_idf_dict is serialized and stored in presistent storage(using the Pickle package)
+
+
+7)"Query_Process" file takes the stored tf_idf_dict by unpickleing and opens gui for user input
+
+8)The query is processed the same way the documents were to give and equal search envionment
+
+9)Our idea:
+->Since the songs may contain Proper nouns and the auto correct package in python may not be able to recognize them we developed 
+targetted edit distance on the bag of words which will reduce the search time and increase speed
+
+->Our weighting model uses squashing function which is a variation of the normal tf*idf learnt in class.
+	This function is used as it is having higher accuracy than the normal bag-of-words model for small queries approximately 2-3 words.
+
+->Basic minimalistic Gui for user-friendliness with interactive buttons
+
+10)dot-Product is calculated with respect to the query and the documents and it is stored in vector_product dict
+
+11)This is then sorted and top 15 non-zero files are posted back giving the results.
+
+12)Functions Used:
+
+->"Preprocess_Store.py":
+def preprocess(filename):
+    with open(filename, "r+") as f:
+        data = f.read().replace("\n", " ")
+        output = data.translate(trans).lower().split()
+        output = [word for word in output if not word in stops]
+        stemmer = PorterStemmer()
+        output = [stemmer.stem(word) for word in output]
+        return output
+Input: A text file for preprocessing
+Process:Remove new Line
+	Case Folding
+	Remove StopWords
+	Stemming of words]
+	
+output:Processed file 
+
+
+
+->"Query_Process.py":
+
+
+def editDist(s1, s2):
+    if len(s1) > len(s2):
+        s1, s2 = s2, s1
+
+    distances = range(len(s1) + 1)
+    for i2, c2 in enumerate(s2):
+        distances_ = [i2+1]
+        for i1, c1 in enumerate(s1):
+            if c1 == c2:
+                distances_.append(distances[i1])
+            else:
+                distances_.append(1 + min((distances[i1], distances[i1 + 1], distances_[-1])))
+        distances = distances_
+    return distances[-1]
+
+Input:two strings
+Process:Finds the minimum edits(insert,Delete,change) required to make the two strings equal
+	Paradigm used:Dynamic Programming
+Output:The minumum Number of Operations to do the same
+
+
+
+
+def process(query):
+    output_query = query.translate(trans).lower().split()
+#print(type(output_query))
+# have to correct the words in output_query
+# function for edit distance for this corpus only thereby reducing time
+    output_query = [word for word in output_query if word not in stops]
+    #   print(output_query)
+#print("did you mean")
+    editted_query = []
+    for query_words in output_query:
+
+        minWord = 'dummy'
+        minimum = 10000
+        for word in bag:
+            if editDist(query_words,word) < minimum:
+              minWord=word
+              minimum = editDist(query_words,word)
+
+    #Replace with the correct estimated word
+        editted_query.append(minWord)
+
+#print(editted_query)
+
+    stemmer = PorterStemmer()
+    output_query = [stemmer.stem(word) for word in editted_query]
+
+    for word in output_query:
+     tf_query[word] = output_query.count(word)
+
+#print(tf_query)
+#  calculate the vector product for the scoring function
+    for word,count in tf_query.items():
+        for file,words in tf_idf_dict.items():
+            dot_product = 0
+            for wr in words:
+                x,y = wr
+                if(x == word):
+                 dot_product = dot_product + (count*y)
+            vector_product[file] = dot_product
+
+# sort the vector-dict according to score descending
+    sorted_x = sorted(vector_product.items(), key=operator.itemgetter(1),reverse=True)
+
+
+#print top 10 from sorted_x
+    answer_string=''
+    count=0
+    for key,value in sorted_x.__iter__():
+        if count>=15:
+            break
+        if value!=0 :
+         #  key is the tex file
+            answer_string+=key+'\n'
+            count+=1
+    #print(answer_string)
+    ctypes.windll.user32.MessageBoxW(0, answer_string, "Showing Results for: "+str(editted_query), 1)
+
+
+
+input: Query by the user
+process:
+Query is taken and all the stop words are removed
+Spell check is done 
+Then the edited query is passed though the tf_idf_dict (dictionary) and for each document strength wrt the query
+Sort the Document relavance and get the top 15 from the list
+
+output:
+	pop-up window showing the top 15 results of the query according to the model
+	
+	
+
+
+
+
+
+
+
